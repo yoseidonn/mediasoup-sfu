@@ -28,16 +28,18 @@
     "voice",
     "video",
     "streaming",
-    "crewdev"
+    "yoseidonn",
+    "crewdev",
+    "mediasoup-sfu"
   ],
-  "author": "CrewDEV",
+  "author": "yoseidonn",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CrewDEV/mediasoup-sfu.git"
+    "url": "git+https://github.com/yoseidonn/mediasoup-sfu.git"
   },
   "bugs": {
-    "url": "https://github.com/CrewDEV/mediasoup-sfu/issues"
+    "url": "https://github.com/yoseidonn/mediasoup-sfu/issues"
   },
-  "homepage": "https://github.com/CrewDEV/mediasoup-sfu#readme"
+  "homepage": "https://github.com/yoseidonn/mediasoup-sfu#readme"
 }
