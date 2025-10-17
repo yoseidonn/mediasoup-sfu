@@ -50,7 +50,7 @@ mkdir -p "$PROJECT_DIR/logs/mediasoup"
 
 # Update ecosystem config with correct paths
 echo -e "${YELLOW}Updating PM2 configuration...${NC}"
-sed -i "s|/home/yusuf/Software/CrewDEV/backend|$PROJECT_DIR|g" "$PROJECT_DIR/ecosystem.config.js"
+sed -i "s|PROJECT_DIR_PLACEHOLDER|$PROJECT_DIR|g" "$PROJECT_DIR/ecosystem.config.js"
 
 # Start mediasoup with PM2
 echo -e "${YELLOW}Starting mediasoup with PM2...${NC}"

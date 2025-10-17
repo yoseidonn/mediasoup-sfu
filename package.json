@@ -34,10 +34,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/mediasoup-sfu.git"
+    "url": "git+https://github.com/CrewDEV/mediasoup-sfu.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/mediasoup-sfu/issues"
+    "url": "https://github.com/CrewDEV/mediasoup-sfu/issues"
   },
-  "homepage": "https://github.com/your-org/mediasoup-sfu#readme"
+  "homepage": "https://github.com/CrewDEV/mediasoup-sfu#readme"
 }
