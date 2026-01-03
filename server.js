@@ -20,7 +20,7 @@ class MediaSoupServer {
   setupMiddleware() {
     // Enable CORS
     this.app.use(cors({
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8000', 'http://localhost:3000'],
+      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8000', 'http://localhost:8001', 'http://localhost:8002', 'http://localhost:8003'],
       credentials: true
     }));
     
@@ -51,6 +51,8 @@ class MediaSoupServer {
     });
     
     // API routes
+    // Set mediasoup instance in API router before mounting
+    api.setMediasoup(this);
     this.app.use('/api', api);
     
     // 404 handler
@@ -196,9 +198,6 @@ class MediaSoupServer {
 
 // Create and start server
 const server = new MediaSoupServer();
-
-// Make server instance available to API routes
-api.mediasoup = server;
 
 server.start().catch(error => {
   logger.error('Failed to start server:', error);

@@ -1,15 +1,20 @@
 const express = require('express');
 const cors = require('cors');
-const { mediasoup } = require('./server');
 const logger = require('./logger');
 
 const router = express.Router();
+
+// mediasoup instance will be set by server.js after initialization
+let mediasoup = null;
 
 // Enable CORS for all routes
 router.use(cors());
 
 // Health check endpoint
 router.get('/health', (req, res) => {
+  if (!mediasoup) {
+    return res.status(503).json({ error: 'mediasoup server not initialized' });
+  }
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -21,6 +26,10 @@ router.get('/health', (req, res) => {
 // Create router for a room/channel
 router.post('/rooms/:roomId/create', async (req, res) => {
   try {
+    if (!mediasoup) {
+      return res.status(503).json({ error: 'mediasoup server not initialized' });
+    }
+    
     const { roomId } = req.params;
     const { rtpCapabilities } = req.body;
     
@@ -74,6 +83,10 @@ router.post('/rooms/:roomId/create', async (req, res) => {
 // Create WebRTC transport
 router.post('/rooms/:roomId/transports/webrtc', async (req, res) => {
   try {
+    if (!mediasoup) {
+      return res.status(503).json({ error: 'mediasoup server not initialized' });
+    }
+    
     const { roomId } = req.params;
     const { direction, userId } = req.body; // direction: 'send' or 'recv'
     
@@ -124,6 +137,10 @@ router.post('/rooms/:roomId/transports/webrtc', async (req, res) => {
 // Connect transport
 router.post('/transports/:transportId/connect', async (req, res) => {
   try {
+    if (!mediasoup) {
+      return res.status(503).json({ error: 'mediasoup server not initialized' });
+    }
+    
     const { transportId } = req.params;
     const { dtlsParameters } = req.body;
     
@@ -149,6 +166,10 @@ router.post('/transports/:transportId/connect', async (req, res) => {
 // Create producer
 router.post('/transports/:transportId/produce', async (req, res) => {
   try {
+    if (!mediasoup) {
+      return res.status(503).json({ error: 'mediasoup server not initialized' });
+    }
+    
     const { transportId } = req.params;
     const { kind, rtpParameters, userId, channelId } = req.body;
     
@@ -204,6 +225,10 @@ router.post('/transports/:transportId/produce', async (req, res) => {
 // Create consumer
 router.post('/transports/:transportId/consume', async (req, res) => {
   try {
+    if (!mediasoup) {
+      return res.status(503).json({ error: 'mediasoup server not initialized' });
+    }
+    
     const { transportId } = req.params;
     const { producerId, rtpCapabilities, userId, channelId } = req.body;
     
@@ -269,6 +294,10 @@ router.post('/transports/:transportId/consume', async (req, res) => {
 // Get room producers
 router.get('/rooms/:roomId/producers', (req, res) => {
   try {
+    if (!mediasoup) {
+      return res.status(503).json({ error: 'mediasoup server not initialized' });
+    }
+    
     const { roomId } = req.params;
     
     const room = mediasoup.rooms[roomId];
@@ -297,6 +326,10 @@ router.get('/rooms/:roomId/producers', (req, res) => {
 // Close producer
 router.delete('/producers/:producerId', async (req, res) => {
   try {
+    if (!mediasoup) {
+      return res.status(503).json({ error: 'mediasoup server not initialized' });
+    }
+    
     const { producerId } = req.params;
     
     logger.info(`Closing producer ${producerId}`);
@@ -321,6 +354,10 @@ router.delete('/producers/:producerId', async (req, res) => {
 // Close consumer
 router.delete('/consumers/:consumerId', async (req, res) => {
   try {
+    if (!mediasoup) {
+      return res.status(503).json({ error: 'mediasoup server not initialized' });
+    }
+    
     const { consumerId } = req.params;
     
     logger.info(`Closing consumer ${consumerId}`);
@@ -345,6 +382,10 @@ router.delete('/consumers/:consumerId', async (req, res) => {
 // Get room status
 router.get('/rooms/:roomId/status', (req, res) => {
   try {
+    if (!mediasoup) {
+      return res.status(503).json({ error: 'mediasoup server not initialized' });
+    }
+    
     const { roomId } = req.params;
     
     const room = mediasoup.rooms[roomId];
@@ -377,4 +418,8 @@ router.get('/rooms/:roomId/status', (req, res) => {
   }
 });
 
+// Export router and setter for mediasoup instance
 module.exports = router;
+module.exports.setMediasoup = (instance) => {
+  mediasoup = instance;
+};
