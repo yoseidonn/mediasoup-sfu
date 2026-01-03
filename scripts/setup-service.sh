@@ -38,6 +38,14 @@ if [ "$NODE_VERSION" -lt 22 ]; then
     exit 1
 fi
 
+# Find Node.js executable path
+NODE_PATH=$(which node)
+if [ -z "$NODE_PATH" ]; then
+    echo -e "${RED}Could not find Node.js executable${NC}"
+    exit 1
+fi
+echo -e "${GREEN}Using Node.js at: $NODE_PATH${NC}"
+
 # Create mediasoup user if it doesn't exist
 if ! id "mediasoup" &>/dev/null; then
     echo -e "${YELLOW}Creating mediasoup user...${NC}"
@@ -82,7 +90,7 @@ Environment=RTC_MIN_PORT=40000
 Environment=RTC_MAX_PORT=49999
 Environment=LOG_LEVEL=info
 Environment=WORKER_COUNT=auto
-ExecStart=/usr/bin/node server.js
+ExecStart=$NODE_PATH server.js
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=always
 RestartSec=10
@@ -112,6 +120,15 @@ systemctl daemon-reload
 
 # Enable service
 systemctl enable mediasoup-sfu
+
+# Check if service already exists and is running
+if systemctl is-active --quiet mediasoup-sfu; then
+    echo -e "${YELLOW}Service is already running. Reloading configuration...${NC}"
+    systemctl daemon-reload
+    systemctl restart mediasoup-sfu
+else
+    echo -e "${GREEN}Service enabled. Use 'systemctl start mediasoup-sfu' to start it.${NC}"
+fi
 
 echo -e "${GREEN}mediasoup SFU service installed successfully!${NC}"
 echo ""

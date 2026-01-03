@@ -50,18 +50,30 @@ mkdir -p "$PROJECT_DIR/logs/mediasoup"
 
 # Update ecosystem config with correct paths
 echo -e "${YELLOW}Updating PM2 configuration...${NC}"
-sed -i "s|PROJECT_DIR_PLACEHOLDER|$PROJECT_DIR|g" "$PROJECT_DIR/ecosystem.config.js"
+if ! grep -q "PROJECT_DIR_PLACEHOLDER" "$PROJECT_DIR/ecosystem.config.js"; then
+    echo -e "${YELLOW}Warning: PROJECT_DIR_PLACEHOLDER not found in ecosystem.config.js, skipping path update${NC}"
+else
+    sed -i "s|PROJECT_DIR_PLACEHOLDER|$PROJECT_DIR|g" "$PROJECT_DIR/ecosystem.config.js"
+fi
 
-# Start mediasoup with PM2
-echo -e "${YELLOW}Starting mediasoup with PM2...${NC}"
-cd "$PROJECT_DIR"
-pm2 start ecosystem.config.js --env production
+# Check if already running
+if pm2 list | grep -q "mediasoup-sfu"; then
+    echo -e "${YELLOW}mediasoup-sfu is already running. Restarting...${NC}"
+    pm2 restart mediasoup-sfu
+else
+    # Start mediasoup with PM2
+    echo -e "${YELLOW}Starting mediasoup with PM2...${NC}"
+    cd "$PROJECT_DIR"
+    pm2 start ecosystem.config.js --env production
+fi
 
 # Save PM2 configuration
 pm2 save
 
-# Setup PM2 to start on boot
-pm2 startup
+# Setup PM2 to start on boot (if not already configured)
+echo -e "${YELLOW}Setting up PM2 to start on boot...${NC}"
+echo -e "${YELLOW}Note: You may need to run the command shown above as root${NC}"
+pm2 startup || echo -e "${YELLOW}PM2 startup command already configured or requires manual setup${NC}"
 
 echo -e "${GREEN}mediasoup SFU started with PM2 successfully!${NC}"
 echo ""
