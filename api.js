@@ -110,6 +110,20 @@ router.post('/rooms/:roomId/transports/webrtc', async (req, res) => {
     // Handle transport events
     transport.on('dtlsstatechange', (dtlsState) => {
       logger.info(`Transport ${transportId} DTLS state: ${dtlsState}`);
+      if (dtlsState === 'connected') {
+        logger.info(`Transport ${transportId} DTLS connected successfully`);
+      } else if (dtlsState === 'failed' || dtlsState === 'closed') {
+        logger.error(`Transport ${transportId} DTLS ${dtlsState}`);
+      }
+    });
+    
+    transport.on('icestatechange', (iceState) => {
+      logger.info(`Transport ${transportId} ICE state: ${iceState}`);
+      if (iceState === 'connected' || iceState === 'completed') {
+        logger.info(`Transport ${transportId} ICE connected successfully`);
+      } else if (iceState === 'failed' || iceState === 'disconnected') {
+        logger.warn(`Transport ${transportId} ICE ${iceState}`);
+      }
     });
     
     transport.on('@close', () => {
@@ -117,7 +131,7 @@ router.post('/rooms/:roomId/transports/webrtc', async (req, res) => {
       room.transports.delete(transportId);
     });
     
-    logger.info(`WebRTC transport created: ${transportId}`);
+    logger.info(`WebRTC transport created: ${transportId}, direction: ${direction}, userId: ${userId}`);
     
     res.json({
       success: true,
@@ -153,7 +167,12 @@ router.post('/transports/:transportId/connect', async (req, res) => {
     
     await transport.connect({ dtlsParameters });
     
-    logger.info(`Transport ${transportId} connected successfully`);
+    // Log transport state after connection
+    logger.info(`Transport ${transportId} connected successfully`, {
+      dtlsState: transport.dtlsState,
+      iceState: transport.iceState,
+      iceSelectedTuple: transport.iceSelectedTuple
+    });
     
     res.json({ success: true });
     
@@ -187,6 +206,12 @@ router.post('/transports/:transportId/produce', async (req, res) => {
       appData: { userId, channelId }
     });
     
+    // CRITICAL: Ensure producer is not paused
+    if (producer.paused) {
+      await producer.resume();
+      logger.warn(`Producer ${producer.id} was paused, resumed it`);
+    }
+    
     // Store producer
     const room = mediasoup.findRoomByTransport(transportId);
     if (room) {
@@ -208,7 +233,12 @@ router.post('/transports/:transportId/produce', async (req, res) => {
       }
     });
     
-    logger.info(`Producer created: ${producer.id}`);
+    // Add debugging events
+    producer.on('score', (score) => {
+      logger.debug(`Producer ${producer.id} score:`, score);
+    });
+    
+    logger.info(`Producer created: ${producer.id}, paused: ${producer.paused}, kind: ${producer.kind}`);
     
     res.json({
       success: true,
@@ -254,12 +284,24 @@ router.post('/transports/:transportId/consume', async (req, res) => {
       return res.status(400).json({ error: 'Cannot consume this producer' });
     }
     
+    // Check producer state
+    if (producer.paused) {
+      logger.warn(`Producer ${producerId} is PAUSED - this will prevent audio from flowing`);
+    }
+    
     // Create consumer
     const consumer = await transport.consume({
       producerId,
       rtpCapabilities,
-      appData: { userId, channelId }
+      appData: { userId, channelId },
+      paused: false  // CRITICAL: Ensure consumer is not paused
     });
+    
+    // CRITICAL: Explicitly resume consumer if it's paused
+    if (consumer.paused) {
+      await consumer.resume();
+      logger.warn(`Consumer ${consumer.id} was paused, resumed it`);
+    }
     
     // Store consumer
     room.consumers.set(consumer.id, consumer);
@@ -275,7 +317,12 @@ router.post('/transports/:transportId/consume', async (req, res) => {
       room.consumers.delete(consumer.id);
     });
     
-    logger.info(`Consumer created: ${consumer.id}`);
+    // Add debugging events
+    consumer.on('score', (score) => {
+      logger.debug(`Consumer ${consumer.id} score:`, score);
+    });
+    
+    logger.info(`Consumer created: ${consumer.id}, paused: ${consumer.paused}, kind: ${consumer.kind}, producer: ${producerId}, producerPaused: ${producer.paused}`);
     
     res.json({
       success: true,
